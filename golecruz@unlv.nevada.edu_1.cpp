@@ -1,0 +1,236 @@
+// Bernard J. Gole Cruz, CS 202-2002, Assignment 1
+
+// This program is a simulation of election votes
+// data will be read from a file, extract data, store into different struct variables
+// will execute algorithm for maximum value, minimum value and sorting
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <stdlib.h>
+#include <iomanip>
+
+using namespace std;
+//struct candidate
+struct Candidate {
+	string first;
+	string last;
+	int votes;
+	double pScore;
+};
+
+const int ARR_SIZE = 100;
+// variable to keep track of number of candidates actually present in the array
+int candidateSize = 0;
+
+// function prototypes
+void readFile(Candidate[]);
+void displayList(Candidate[]);
+void sortByVotes(Candidate[]);
+void displayCandidate(Candidate);
+Candidate getWinner(Candidate[]);
+Candidate getLast(Candidate[]);
+void calculateScores(Candidate[]);
+void roundScore(Candidate &);
+
+int main() {
+	// create an array of Candidate objects
+	Candidate candidates[ARR_SIZE];
+
+	// read file
+	readFile(candidates);
+
+	// display candidates
+	displayList(candidates);
+
+	// compute score and sort the candidates
+	calculateScores(candidates);
+	sortByVotes(candidates);
+
+	// again display the candidates
+	displayList(candidates);
+
+	// compute the winner and display the stats
+	Candidate winner = getWinner(candidates);
+	roundScore(winner);
+	cout << "winner:" << endl;
+	cout << left << setw(12) << "FIRST NAME:" << winner.first << endl;
+	cout << left << setw(12) << "LAST NAME:" << winner.last << endl;
+	cout << left << setw(12) << "VOTES:" << winner.votes << endl;
+	cout << left << setw(12) << "% GAINED:" << winner.pScore << "%" << endl << endl;
+
+	// compute the last candidate and display the stats
+	Candidate last = getLast(candidates);
+	roundScore(last);
+	cout << "lowest score:" << endl;
+	cout << left << setw(12) << "FIRST NAME:" << last.first << endl;
+	cout << left << setw(12) << "LAST NAME:" << last.last << endl;
+	cout << left << setw(12) << "VOTES:" << last.votes << endl;
+	cout << left << setw(12) << "% GAINED:" << last.pScore << "%" << endl << endl;
+
+	// display the list again
+	displayList(candidates);
+
+	system("pause");
+}
+
+void readFile(Candidate candidates[]) {
+	string line;
+	ifstream infile;
+	infile.open("elections.txt");
+
+	// read until the end of file is reached
+	while (!infile.eof()) {
+		// read a single line from the file, store in string variable line
+		getline(infile,line);
+
+		// retrieve the first data, first name
+		int firstIndex = line.find(',');
+		string firstName = line.substr(0, firstIndex);
+
+		// validate the first data, first name
+		if (firstName.size() < 3 || firstName[0] != 'F' || firstName[1] != '=')
+			continue;
+
+		// extract first name
+		firstName = firstName.substr(2);
+
+		// retrieve the second data, last name
+		int secondIndex = line.find(',', firstIndex + 1);
+		string lastName = line.substr(firstIndex + 1, (secondIndex - firstIndex - 1));
+
+		// validate the second data, last name
+		if (lastName.size() < 3 || lastName[0] != 'L' || lastName[1] != '=')
+			continue;
+
+		// extract last name
+		lastName = lastName.substr(2);
+
+		// retrieve the third data, votes
+		string votes = line.substr(secondIndex + 1);
+
+		// validate third data, votes
+		if (votes.size() < 3 || votes[0] != 'V' || votes[1] != '=')
+			continue;
+
+		// convert votes to int, string to int
+		int votesCount = atoi(votes.substr(2).c_str());
+
+		// create a new Candidate object
+		// store, each data. into object variables
+		Candidate newCandidate;
+		newCandidate.first = firstName;
+		newCandidate.last = lastName;
+		newCandidate.votes = votesCount;
+		newCandidate.pScore = 0.0;
+
+		// add it to the array
+		candidates[candidateSize++] = newCandidate;
+	}
+
+	// close the ifstream
+	infile.close();
+}
+
+void displayList(Candidate candidates[]) {
+	// display the header
+	cout << "ALL CANDIDATES:" << endl;
+	cout << right << setw(7) << "First:" << right << setw(10) << "Last:" << right << setw(10) << "Votes:" << right << setw(12) << "% Score" << endl;
+
+	// call displayCandidate function to display information about a single
+	// Candidate
+	for (int index = 0; index < candidateSize; index++) {
+		displayCandidate(candidates[index]);
+	}
+
+	cout << endl;
+}
+
+void sortByVotes(Candidate candidates[]) {
+
+	// use two for loop to apply selection sort algorithm to sort the array
+	// based on votes
+	for (int index1 = 0; index1 < candidateSize - 1; index1++) {
+		// assign current candidate as the candidate with lowest votes
+		int min = index1;
+
+		// search for the candidate with lowest votes in the remaining array
+		for (int index2 = index1 + 1; index2 < candidateSize; index2++) {
+			if (candidates[index2].votes < candidates[index1].votes)
+				min = index2;
+		}
+
+		// swap the index1 position with the candidate with lowest votes
+		Candidate temp = candidates[index1];
+		candidates[index1] = candidates[min];
+		candidates[min] = temp;
+	}
+}
+
+void displayCandidate(Candidate cand) {
+	// display the candidate information
+	cout << right << setw(7) << cand.first << right << setw(10) << cand.last << right << setw(10) << cand.votes << fixed << setprecision(2) << right << setw(11) << cand.pScore << "%" << endl;
+}
+
+Candidate getWinner(Candidate candidates[]) {
+	// get maximum value
+	// assume the winner is at index 0
+	int winnerIndex = 0;
+
+	// check the remaining candidates
+	for (int index = 1; index < candidateSize; index++) {
+		// if current candidate have larger votes then reassign the winner
+		if (candidates[index].votes > candidates[winnerIndex].votes)
+			winnerIndex = index;
+	}
+
+	// return the winner Candidate
+	return candidates[winnerIndex];
+}
+
+Candidate getLast(Candidate candidates[]) {
+	// get minimum value
+	// assume the last candidate is at index 0
+	int lastIndex = 0;
+
+	// check the remaining candidates
+	for (int index = 1; index < candidateSize; index++) {
+		// if current candidate have lesser votes then reassign the lastIndex
+		if (candidates[index].votes < candidates[lastIndex].votes)
+			lastIndex = index;
+	}
+
+	// reutn the Candidate with least number of votes
+	return candidates[lastIndex];
+}
+
+void calculateScores(Candidate candidates[]) {
+	double sumOfScores = 0;
+
+	// compute the total of the scores
+	for (int index = 0; index < candidateSize; index++) {
+		sumOfScores += candidates[index].votes;
+	}
+
+	// compute the score for each Candidate using the formula (1)
+	for (int index = 0; index < candidateSize; index++) {
+		candidates[index].pScore = candidates[index].votes / sumOfScores * 100;
+	}
+}
+
+void roundScore(Candidate &cand) {
+
+	// find the integer part
+	int integerPart = (int)cand.pScore;
+
+	// find the decimal part and convert it to integer
+	int decimalPart = (int)(cand.pScore - integerPart * 100);
+
+	// check if the decimal part is less than 50
+	// if it is less, round it down
+	// otherwise, round it up
+	if (decimalPart < 50)
+		cand.pScore = integerPart;
+	else
+		cand.pScore = integerPart + 1;
+}
